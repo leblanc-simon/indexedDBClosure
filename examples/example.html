@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>indexedDBClosure examples</title>
+  </head>
+  <body>
+    <div class="search-engine">
+      <input type="text" value="" />
+      <button class="search">Search</button>
+    </div>
+    <h3>Results</h3>
+    <ul class="results">
+      
+    </ul>
+    
+    <div class="add-form">
+      <input type="text" value="" />
+      <button class="add">Add</button>
+    </div>
+    <h1>Todos</h1>
+    <ul class="todos">
+      
+    </ul>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="../indexedDBClosure.js"></script>
+    <script type="text/javascript">
+      // Create database
+      var database = new indexedDBClosure({
+        name: "indexedDBClosure-todo",
+        version: 1,
+        tables: [
+          {name : 'todo', key : 'id', indexes : [{ name : 'name', key : 'name' }] }
+        ],
+        debug: true
+      });
+      
+      // Add an item in the todo list
+      function addItem(name, id)
+      {
+        $('.todos').append('<li id="' + id + '">' + name + ' <a class="remove">Remove</a></li>');
+      }
+      
+      
+      $(document).ready(function(){
+        // wait the database is ready
+        database.ready(function(){
+          
+          $('.add').click(function(){
+            // create the objet to store in the database
+            var todo = {
+              id: new Date().getTime(),
+              name: $('.add-form input').val()
+            }
+            
+            // store the objet
+            // the function will be execute when object will be saved
+            database.add(['todo'], todo, function(){
+              addItem(todo.name, todo.id);
+            });
+          });
+          
+          $('.remove').live('click', function(){
+            var id = parseInt($(this).parents('li').attr('id'));
+            
+            // remove the object in the database
+            // the function will be execute when object will be removed
+            database.remove(['todo'], id, function(){
+              $('li#' + id).remove();
+            });
+          });
+          
+          $('.search').click(function(){
+            var search =  $('.search-engine input').val();
+            $('.results').html('');
+            var count = 0;
+            
+            // search an object by name
+            // first function will be execute for each item found
+            // second function will be execute at the end of search
+            database.search(['todo'], 'name', search,
+              function(data){
+                $('.results').append('<li>' + data.name + ' - ' + data.id + '</li>');
+                count++;
+              },
+              function() {
+                alert(count + ' results found');
+              }
+            );
+          });
+          
+          // Get all object in the database
+          // function is execute for each item found
+          database.getAll(['todo'], function(data){
+            addItem(data.name, data.id);
+          });
+        });
+      })
+    </script>
+  </body>
+</html>
